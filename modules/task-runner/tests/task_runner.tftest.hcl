@@ -1,0 +1,453 @@
+mock_provider "aws" {
+  override_during = plan
+
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "123456789012"
+    }
+  }
+
+  mock_data "aws_region" {
+    defaults = {
+      region = "us-east-1"
+    }
+  }
+
+  mock_data "aws_ssm_parameter" {
+    defaults = {
+      value = "ami-0123456789abcdef0"
+    }
+  }
+
+  mock_resource "aws_iam_role" {
+    defaults = {
+      arn = "arn:aws:iam::123456789012:role/acme-technologies-rusty-chess-task"
+    }
+  }
+
+  mock_resource "aws_iam_instance_profile" {
+    defaults = {
+      arn = "arn:aws:iam::123456789012:instance-profile/acme-technologies-rusty-chess-task"
+    }
+  }
+
+  mock_resource "aws_security_group" {
+    defaults = {
+      id = "sg-0123456789abcdef0"
+    }
+  }
+
+  mock_resource "aws_launch_template" {
+    defaults = {
+      id = "lt-0123456789abcdef0"
+    }
+  }
+
+  mock_resource "aws_cloudwatch_log_group" {
+    defaults = {
+      arn = "arn:aws:logs:us-east-1:123456789012:log-group:/acme-technologies/rusty-chess/tasks"
+    }
+  }
+}
+
+variables {
+  project   = "rusty-chess"
+  vpc_id    = "vpc-0123"
+  name_root = "acme-technologies"
+}
+
+run "launch_template" {
+  command = plan
+
+  assert {
+    condition     = aws_launch_template.this.name == "acme-technologies-rusty-chess-task"
+    error_message = "the template is named <name_root>-<project>-task"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.instance_initiated_shutdown_behavior == "terminate"
+    error_message = "a shutdown from inside the instance must terminate it"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.update_default_version
+    error_message = "the CLI launches $Default, so each change must become the default version"
+  }
+
+  assert {
+    condition = (
+      aws_launch_template.this.metadata_options[0].http_tokens == "required" &&
+      aws_launch_template.this.metadata_options[0].http_endpoint == "enabled"
+    )
+    error_message = "IMDSv2 must be required"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.instance_type == "c8a.xlarge"
+    error_message = "the default instance type is c8a.xlarge"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.image_id == "ami-0123456789abcdef0"
+    error_message = "without a pin the image comes from the public Amazon Linux 2023 parameter"
+  }
+
+  assert {
+    condition     = data.aws_ssm_parameter.ami[0].name == "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+    error_message = "the parameter must match the architecture"
+  }
+
+  assert {
+    condition = (
+      aws_launch_template.this.block_device_mappings[0].ebs[0].volume_type == "gp3" &&
+      aws_launch_template.this.block_device_mappings[0].ebs[0].volume_size == 40 &&
+      aws_launch_template.this.block_device_mappings[0].ebs[0].encrypted == "true" &&
+      aws_launch_template.this.block_device_mappings[0].ebs[0].delete_on_termination == "true"
+    )
+    error_message = "the root volume is an encrypted 40 GB gp3 volume deleted with the instance"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.iam_instance_profile[0].arn == aws_iam_instance_profile.this.arn
+    error_message = "instances run with the task instance profile"
+  }
+
+  assert {
+    condition = (
+      aws_launch_template.this.vpc_security_group_ids == toset([aws_security_group.this[0].id]) &&
+      length(aws_launch_template.this.network_interfaces) == 0
+    )
+    error_message = "the template sets the security group only; the CLI picks the subnet per launch"
+  }
+
+  assert {
+    condition = (
+      toset([for t in aws_launch_template.this.tag_specifications : t.resource_type]) == toset(["instance", "volume"]) &&
+      alltrue([for t in aws_launch_template.this.tag_specifications : t.tags == tomap({ Project = "rusty-chess", Component = "task-runner", Purpose = "ci-task", Profile = "cpu" })])
+    )
+    error_message = "instances and volumes carry Project, Component = task-runner, Purpose = ci-task (task/launch requires Project and Purpose as request tags) and Profile"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.tags == tomap({ Name = "acme-technologies-rusty-chess-task", Component = "task-runner", Profile = "cpu" })
+    error_message = "the template carries Name, Component = task-runner and Profile"
+  }
+}
+
+run "user_data" {
+  command = plan
+
+  assert {
+    condition     = startswith(base64decode(aws_launch_template.this.user_data), "#!/bin/bash\nshutdown -h +360\n")
+    error_message = "the lifetime guard must be scheduled before anything else runs"
+  }
+
+  assert {
+    condition = (
+      strcontains(base64decode(aws_launch_template.this.user_data), "TASK_RUST_TOOLCHAIN=stable\n") &&
+      strcontains(base64decode(aws_launch_template.this.user_data), "rustup") &&
+      strcontains(base64decode(aws_launch_template.this.user_data), "dnf install -y git gcc")
+    )
+    error_message = "the setup installs git, gcc and rustup with the toolchain"
+  }
+
+  assert {
+    condition     = strcontains(base64decode(aws_launch_template.this.user_data), "TASK_GPU=0\n")
+    error_message = "the cpu profile does not wait for a GPU"
+  }
+}
+
+run "no_rust_toolchain" {
+  command = plan
+
+  variables {
+    rust_toolchain = null
+  }
+
+  assert {
+    condition     = strcontains(base64decode(aws_launch_template.this.user_data), "TASK_RUST_TOOLCHAIN=\nTASK_GPU=0\n")
+    error_message = "a null toolchain renders an empty TASK_RUST_TOOLCHAIN so the setup skips rustup"
+  }
+}
+
+run "lifetime_and_toolchain_follow_inputs" {
+  command = plan
+
+  variables {
+    max_lifetime_hours = 2
+    rust_toolchain     = "1.91.0"
+    ami_id             = "ami-0fedcba9876543210"
+    root_volume_gb     = 80
+  }
+
+  assert {
+    condition = (
+      startswith(base64decode(aws_launch_template.this.user_data), "#!/bin/bash\nshutdown -h +120\n") &&
+      strcontains(base64decode(aws_launch_template.this.user_data), "TASK_RUST_TOOLCHAIN=1.91.0\n")
+    )
+    error_message = "the guard and the toolchain follow the inputs"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.image_id == "ami-0fedcba9876543210" && length(data.aws_ssm_parameter.ami) == 0
+    error_message = "a pinned image is used as is"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.block_device_mappings[0].ebs[0].volume_size == 80
+    error_message = "the root volume follows root_volume_gb"
+  }
+}
+
+run "security_group" {
+  command = plan
+
+  assert {
+    condition     = aws_security_group.this[0].name == "acme-technologies-rusty-chess-task" && aws_security_group.this[0].vpc_id == "vpc-0123"
+    error_message = "the task security group lives in the project's VPC"
+  }
+
+  assert {
+    condition     = length(aws_security_group.this[0].ingress) == 0
+    error_message = "no ingress"
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_egress_rule.all_ipv4[0].cidr_ipv4 == "0.0.0.0/0" && aws_vpc_security_group_egress_rule.all_ipv4[0].ip_protocol == "-1"
+    error_message = "egress to all IPv4"
+  }
+}
+
+run "instance_role" {
+  command = plan
+
+  assert {
+    condition = (
+      aws_iam_role.this.name == "acme-technologies-rusty-chess-task" &&
+      jsondecode(aws_iam_role.this.assume_role_policy).Statement[0].Principal.Service == "ec2.amazonaws.com" &&
+      aws_iam_instance_profile.this.role == aws_iam_role.this.name
+    )
+    error_message = "the role is <name_root>-<project>-task, the name task/launch may pass, trusted by EC2"
+  }
+
+  # AmazonSSMManagedInstanceCore grants ssm:GetParameter on *, which would
+  # let pull request code read every parameter in the account, the bot's
+  # Lichess token among them. The agent gets an inline minimum instead.
+  assert {
+    condition = jsonencode(jsondecode(aws_iam_role_policy.this.policy).Statement[3]) == jsonencode({
+      Sid    = "RunCommandAgent"
+      Effect = "Allow"
+      Action = [
+        "ec2messages:AcknowledgeMessage",
+        "ec2messages:DeleteMessage",
+        "ec2messages:FailMessage",
+        "ec2messages:GetEndpoint",
+        "ec2messages:GetMessages",
+        "ec2messages:SendReply",
+        "ssm:DescribeAssociation",
+        "ssm:ListAssociations",
+        "ssm:ListInstanceAssociations",
+        "ssm:UpdateAssociationStatus",
+        "ssm:UpdateInstanceAssociationStatus",
+        "ssm:UpdateInstanceInformation",
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel",
+      ]
+      Resource = "*"
+    })
+    error_message = "the agent gets only Run Command's channel and registration actions"
+  }
+
+  assert {
+    condition = !anytrue(flatten([
+      for s in jsondecode(aws_iam_role_policy.this.policy).Statement : [
+        for a in flatten([s.Action]) : startswith(a, "ssm:GetParameter") || startswith(a, "kms:") || startswith(a, "secretsmanager:") || a == "ssm:*" || a == "*"
+      ]
+    ]))
+    error_message = "the task instance must read no parameter and no secret"
+  }
+
+  assert {
+    condition     = jsonencode([for s in jsondecode(aws_iam_role_policy.this.policy).Statement : s.Sid]) == jsonencode(["WriteTaskLogs", "FindTaskLogGroup", "WriteTaskResults", "RunCommandAgent"])
+    error_message = "the inline policy has exactly the log and results statements"
+  }
+
+  assert {
+    condition = jsonencode(jsondecode(aws_iam_role_policy.this.policy).Statement[0]) == jsonencode({
+      Sid      = "WriteTaskLogs"
+      Effect   = "Allow"
+      Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"]
+      Resource = ["arn:aws:logs:us-east-1:123456789012:log-group:/acme-technologies/rusty-chess/tasks", "arn:aws:logs:us-east-1:123456789012:log-group:/acme-technologies/rusty-chess/tasks:*"]
+    })
+    error_message = "logs: write to the task log group only"
+  }
+
+  assert {
+    condition = jsonencode(jsondecode(aws_iam_role_policy.this.policy).Statement[1]) == jsonencode({
+      Sid      = "FindTaskLogGroup"
+      Effect   = "Allow"
+      Action   = "logs:DescribeLogGroups"
+      Resource = "arn:aws:logs:us-east-1:123456789012:log-group:*"
+    })
+    error_message = "Run Command's CloudWatch output checks that the group exists first"
+  }
+
+  assert {
+    condition = jsonencode(jsondecode(aws_iam_role_policy.this.policy).Statement[2]) == jsonencode({
+      Sid      = "WriteTaskResults"
+      Effect   = "Allow"
+      Action   = "s3:PutObject"
+      Resource = "arn:aws:s3:::acme-technologies-rusty-chess-tasks/tasks/$${aws:userid}/*"
+    })
+    # An EC2 role session's aws:userid is <role-id>:<instance-id>: each instance
+    # can write only its own prefix, never another task's results.
+    error_message = "results: put objects under the instance's own tasks/<role-id>:<instance-id>/ prefix only"
+  }
+}
+
+# Changing a role's description needs iam:UpdateRoleDescription, which the
+# stacks' apply roles lack: the cpu profile must keep its pre-profile wording.
+run "cpu_descriptions_are_unchanged" {
+  command = plan
+
+  assert {
+    condition     = aws_iam_role.this.description == "Task instances of rusty-chess: run commands, write task logs and results"
+    error_message = "the cpu role's description must stay as it was before profiles"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.description == "Ephemeral CI task instances of rusty-chess"
+    error_message = "the cpu template's description must stay as it was before profiles"
+  }
+}
+
+run "log_group" {
+  command = plan
+
+  assert {
+    condition     = aws_cloudwatch_log_group.this[0].name == "/acme-technologies/rusty-chess/tasks" && aws_cloudwatch_log_group.this[0].retention_in_days == 14
+    error_message = "the task log group is /<name_root>/<project>/tasks with 14 days of retention"
+  }
+
+  assert {
+    condition = (
+      output.log_group_name == "/acme-technologies/rusty-chess/tasks" &&
+      output.results_uri == "s3://acme-technologies-rusty-chess-tasks/tasks/" &&
+      output.launch_template_name == "acme-technologies-rusty-chess-task" &&
+      output.instance_role_name == "acme-technologies-rusty-chess-task"
+    )
+    error_message = "outputs expose the names the CLI derives"
+  }
+}
+
+# A second profile of the same project: its own template and role, the
+# project's log group and security group.
+run "gpu_profile" {
+  command = plan
+
+  variables {
+    profile               = "gpu"
+    gpu                   = true
+    default_instance_type = "g6.xlarge"
+    root_volume_gb        = 200
+    shared = {
+      log_group_name    = "/acme-technologies/rusty-chess/tasks"
+      security_group_id = "sg-0aaaaaaaaaaaaaaaa"
+    }
+  }
+
+  assert {
+    condition = (
+      aws_launch_template.this.name == "acme-technologies-rusty-chess-task-gpu" &&
+      aws_iam_role.this.name == "acme-technologies-rusty-chess-task-gpu" &&
+      aws_iam_instance_profile.this.name == "acme-technologies-rusty-chess-task-gpu"
+    )
+    error_message = "a profile other than cpu is <name_root>-<project>-task-<profile>"
+  }
+
+  assert {
+    condition     = aws_iam_role.this.description == "Task instances of rusty-chess, profile gpu: run commands, write task logs and results"
+    error_message = "other profiles name the profile in the role's description, set at creation"
+  }
+
+  assert {
+    condition = (
+      length(aws_cloudwatch_log_group.this) == 0 &&
+      length(aws_security_group.this) == 0 &&
+      length(aws_vpc_security_group_egress_rule.all_ipv4) == 0 &&
+      aws_launch_template.this.vpc_security_group_ids == toset(["sg-0aaaaaaaaaaaaaaaa"]) &&
+      output.log_group_name == "/acme-technologies/rusty-chess/tasks"
+    )
+    error_message = "with shared, the profile reuses the project's log group and security group"
+  }
+
+  assert {
+    condition = jsondecode(aws_iam_role_policy.this.policy).Statement[0].Resource == [
+      "arn:aws:logs:us-east-1:123456789012:log-group:/acme-technologies/rusty-chess/tasks",
+      "arn:aws:logs:us-east-1:123456789012:log-group:/acme-technologies/rusty-chess/tasks:*",
+    ]
+    error_message = "the profile's instances write to the shared task log group"
+  }
+
+  assert {
+    condition = alltrue([
+      for t in aws_launch_template.this.tag_specifications : t.tags["Profile"] == "gpu"
+    ]) && aws_launch_template.this.tags["Profile"] == "gpu"
+    error_message = "the template and its instances and volumes carry Profile = gpu"
+  }
+
+  assert {
+    condition = (
+      strcontains(base64decode(aws_launch_template.this.user_data), "TASK_GPU=1\n") &&
+      strcontains(base64decode(aws_launch_template.this.user_data), "nvidia-smi")
+    )
+    error_message = "a GPU profile's setup waits for the driver"
+  }
+
+  assert {
+    condition     = aws_launch_template.this.block_device_mappings[0].ebs[0].volume_size == 200
+    error_message = "the root volume follows root_volume_gb"
+  }
+}
+
+run "rejects_malformed_profile" {
+  command = plan
+
+  variables {
+    profile = "GPU"
+  }
+
+  expect_failures = [var.profile]
+}
+
+run "rejects_long_lifetime" {
+  command = plan
+
+  variables {
+    max_lifetime_hours = 25
+  }
+
+  expect_failures = [var.max_lifetime_hours]
+}
+
+run "rejects_malformed_instance_type" {
+  command = plan
+
+  variables {
+    default_instance_type = "c8a xlarge"
+  }
+
+  expect_failures = [var.default_instance_type]
+}
+
+run "rejects_unsafe_toolchain" {
+  command = plan
+
+  variables {
+    rust_toolchain = "stable; rm -rf /"
+  }
+
+  expect_failures = [var.rust_toolchain]
+}
