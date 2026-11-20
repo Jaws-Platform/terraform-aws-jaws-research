@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/Jaws-Platform/terraform-aws-jaws-research/compare/v0.1.1...v0.1.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* name the organization Jaws-Platform in addresses and links ([#10](https://github.com/Jaws-Platform/terraform-aws-jaws-research/issues/10)) ([3d40aea](https://github.com/Jaws-Platform/terraform-aws-jaws-research/commit/3d40aea4889728426dcc9bf420a41421c42af3ad))
+
 ## [0.1.1](https://github.com/Jaws-Platform/terraform-aws-jaws-research/compare/v0.1.0...v0.1.1) (2026-11-20)
 
 
