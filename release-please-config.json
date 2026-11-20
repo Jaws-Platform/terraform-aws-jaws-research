@@ -12,7 +12,8 @@
         "README.md",
         { "type": "generic", "path": "modules/*/README.md", "glob": true },
         { "type": "generic", "path": "examples/*/README.md", "glob": true }
-      ]
+      ],
+      "release-as": "0.1.3"
     }
   }
 }
