@@ -3,12 +3,12 @@
 The least a project needs to run tasks on ephemeral EC2 instances:
 
 - a VPC with two public subnets, from the
-  [network family](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest);
+  [network family](https://registry.terraform.io/modules/jaws-platform/jaws-network/aws/latest);
 - the `cpu` task profile with every default: a launch template for
   `c8a.xlarge` instances on the latest Amazon Linux 2023 image, a write-only
   instance role, a security group without ingress and a log group;
 - the results bucket the task instances write to, a
-  [`private-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/private-bucket)
+  [`private-bucket`](https://registry.terraform.io/modules/jaws-platform/jaws-foundation/aws/latest/submodules/private-bucket)
   whose objects expire after a week.
 
 Nothing here launches an instance, and nothing here has a standing cost. A
@@ -25,7 +25,7 @@ address, and the git sources with the other families' registry addresses:
 
 ```hcl
 module "research" {
-  source  = "Jaws-Platform/jaws-research/aws"
+  source  = "jaws-platform/jaws-research/aws"
   version = "0.1.0" # x-release-please-version
 
   name_root = "acme"
@@ -34,7 +34,7 @@ module "research" {
 }
 
 module "task_results" {
-  source  = "Jaws-Platform/jaws-foundation/aws//modules/private-bucket"
+  source  = "jaws-platform/jaws-foundation/aws//modules/private-bucket"
   version = "~> 0.1"
 
   name                           = module.research.results_bucket_name
