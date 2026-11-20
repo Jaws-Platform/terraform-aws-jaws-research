@@ -41,7 +41,7 @@ data "aws_ami" "deep_learning" {
 }
 
 module "network" {
-  source = "git::https://github.com/jaws-platform/terraform-aws-jaws-network.git//modules/vpc?ref=v0.1.0"
+  source = "git::https://github.com/Jaws-Platform/terraform-aws-jaws-network.git//modules/vpc?ref=v0.1.0"
 
   name       = "acme-chess-bot"
   cidr_block = "10.40.0.0/16"
@@ -105,7 +105,7 @@ module "research" {
 # The module names the results bucket and grants each task instance its own
 # prefix of it; the caller creates it.
 module "task_results" {
-  source = "git::https://github.com/jaws-platform/terraform-aws-jaws-foundation.git//modules/private-bucket?ref=v0.1.0"
+  source = "git::https://github.com/Jaws-Platform/terraform-aws-jaws-foundation.git//modules/private-bucket?ref=v0.1.0"
 
   name                           = module.research.results_bucket_name
   current_object_expiration_days = 14
