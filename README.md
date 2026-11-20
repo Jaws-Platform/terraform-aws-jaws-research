@@ -74,7 +74,7 @@ to. The module names that bucket; you create it:
 ```hcl
 module "research" {
   source  = "Jaws-Platform/jaws-research/aws"
-  version = "0.1.2" # x-release-please-version
+  version = "0.1.3" # x-release-please-version
 
   name_root = "acme"
   project   = "chess-bot"
@@ -96,7 +96,7 @@ tasks read them and add nets that can never be overwritten:
 ```hcl
 module "research" {
   source  = "Jaws-Platform/jaws-research/aws"
-  version = "0.1.2" # x-release-please-version
+  version = "0.1.3" # x-release-please-version
 
   name_root = "acme"
   project   = "chess-bot"
@@ -136,7 +136,7 @@ no task writes to, read by a role you already have:
 ```hcl
 module "nnue" {
   source  = "Jaws-Platform/jaws-research/aws//modules/dataset-bucket"
-  version = "0.1.2" # x-release-please-version
+  version = "0.1.3" # x-release-please-version
 
   name             = "acme-chess-bot-nnue"
   prefix           = "data/"

@@ -75,7 +75,7 @@ that names a role that does not exist.
 ```hcl
 module "nnue" {
   source  = "Jaws-Platform/jaws-research/aws//modules/dataset-bucket"
-  version = "0.1.2" # x-release-please-version
+  version = "0.1.3" # x-release-please-version
 
   name              = "acme-chess-bot-nnue"
   prefix            = "data/"
