@@ -1,6 +1,6 @@
 # dataset-bucket
 
-Part of [`jwallace145/jaws-research/aws`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest) · [Registry](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/dataset-bucket) · [Source](https://github.com/jwallace145/terraform-aws-jaws-research/tree/main/modules/dataset-bucket)
+Part of [`Jaws-Platform/jaws-research/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-research/tree/main/modules/dataset-bucket)
 
 A durable, append-only S3 bucket for a project's datasets, such as NNUE
 self-play training data: data that every later model is built and compared
@@ -27,7 +27,7 @@ sub-prefixes are opt-ins.
   next daily lifecycle run). Training reads data in bursts and then it goes
   cold; Intelligent-Tiering moves it to cheaper tiers on its own. S3 does not
   transition objects under 128 KB, such as manifests; they stay in Standard.
-- **Hardened like [`private-bucket`](https://registry.terraform.io/modules/jwallace145/jaws-foundation/aws/latest/submodules/private-bucket):** SSE-S3 with a
+- **Hardened like [`private-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/private-bucket):** SSE-S3 with a
   bucket key, all four public access blocks, `BucketOwnerEnforced`, a bucket
   policy that denies requests without TLS, and incomplete multipart uploads
   aborted after 7 days.
@@ -49,23 +49,23 @@ another, such as a GPU trainer that reads `selfplay/` positions and writes
 
 Writers never get `GetObject` or `DeleteObject`: a writer such as a CI task
 instance (the instance role of a
-[`task-runner`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner))
+[`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner))
 may run pull request code, and the dataset is append-only. A CI role that
 plans and applies the bucket needs its configuration only, never its objects:
-the [CI family](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest)
-has the [`dataset/read`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/read) and
-[`dataset/manage`](https://github.com/jwallace145/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/manage)
+the [CI family](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest)
+has the [`dataset/read`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/read) and
+[`dataset/manage`](https://github.com/Jaws-Platform/terraform-aws-jaws-ci/tree/main/modules/ci-policies/dataset/manage)
 policies for that.
 
 ## Reading from Databricks
 
 A reader can be the IAM role of a Unity Catalog storage credential: name it
 in `reader_role_arns`, and in the same account the bucket policy is all it
-needs. The [Databricks family](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest)
+needs. The [Databricks family](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest)
 creates that role and a read-only external location over the prefix with
-[`databricks-dataset`](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest/submodules/databricks-dataset),
+[`databricks-dataset`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-dataset),
 and decides which workspaces may read it with
-[`databricks-dataset-access`](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest/submodules/databricks-dataset-access).
+[`databricks-dataset-access`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-dataset-access).
 The role can read nothing until it is named here, so the project that owns
 the data holds the switch. Create the role first: S3 rejects a bucket policy
 that names a role that does not exist.
@@ -74,7 +74,7 @@ that names a role that does not exist.
 
 ```hcl
 module "nnue" {
-  source  = "jwallace145/jaws-research/aws//modules/dataset-bucket"
+  source  = "Jaws-Platform/jaws-research/aws//modules/dataset-bucket"
   version = "0.1.0" # x-release-please-version
 
   name              = "acme-chess-bot-nnue"
@@ -84,10 +84,10 @@ module "nnue" {
 ```
 
 `module.tasks` is a
-[`task-runner`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner):
+[`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner):
 its instances may then add objects under `data/`, and can neither read nor
 delete them. The
-[root module](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest)
+[root module](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest)
 creates a project's task profiles and its dataset buckets in one call.
 
 <!-- BEGIN_TF_DOCS -->

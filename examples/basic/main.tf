@@ -17,7 +17,7 @@ provider "aws" {
 # Task instances reach out (packages, the code under test, SSM, S3) and are
 # never reached: public subnets, and a security group without ingress.
 module "network" {
-  source = "git::https://github.com/jwallace145/terraform-aws-jaws-network.git//modules/vpc?ref=v0.1.0"
+  source = "git::https://github.com/Jaws-Platform/terraform-aws-jaws-network.git//modules/vpc?ref=v0.1.0"
 
   name       = "acme-chess-bot"
   cidr_block = "10.40.0.0/16"
@@ -40,7 +40,7 @@ module "research" {
 # prefix of it; the caller creates it. Results are copied back by the
 # launcher, so a week is plenty.
 module "task_results" {
-  source = "git::https://github.com/jwallace145/terraform-aws-jaws-foundation.git//modules/private-bucket?ref=v0.1.0"
+  source = "git::https://github.com/Jaws-Platform/terraform-aws-jaws-foundation.git//modules/private-bucket?ref=v0.1.0"
 
   name                           = module.research.results_bucket_name
   current_object_expiration_days = 7

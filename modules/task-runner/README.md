@@ -1,6 +1,6 @@
 # task-runner
 
-Part of [`jwallace145/jaws-research/aws`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest) · [Registry](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner) · [Source](https://github.com/jwallace145/terraform-aws-jaws-research/tree/main/modules/task-runner)
+Part of [`Jaws-Platform/jaws-research/aws`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest) · [Registry](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner) · [Source](https://github.com/Jaws-Platform/terraform-aws-jaws-research/tree/main/modules/task-runner)
 
 Prepares a project's ephemeral CI task instances: a launch template, an
 instance role and profile, an egress-only security group and a CloudWatch
@@ -12,9 +12,9 @@ module was built for the [Jaws](https://github.com/jwallace145/jaws) CLI
 that keeps to the same contract works.
 
 Names derive from `name_root` and `project`. A launch role from the
-[CI family](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest),
-[`ci-task-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-task-role)
-with the [`task/launch`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies)
+[CI family](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest),
+[`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role)
+with the [`task/launch`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies)
 policy, depends on them:
 
 | What | Name |
@@ -24,7 +24,7 @@ policy, depends on them:
 | Results | `s3://<name_root>-<project>-tasks/tasks/<role-id>:<instance-id>/`, the session's `aws:userid` |
 
 The caller creates the results bucket, for example with
-[`private-bucket`](https://registry.terraform.io/modules/jwallace145/jaws-foundation/aws/latest/submodules/private-bucket) and `current_object_expiration_days`.
+[`private-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/private-bucket) and `current_object_expiration_days`.
 
 ## Profiles
 
@@ -43,7 +43,7 @@ them through `shared`, from the first one's `shared` output.
 Every template, instance and volume carries `Profile = <profile>`, so a
 launcher can count each profile's vCPUs separately and cost reports can split
 them. A launch role built with
-[`ci-task-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-task-role)
+[`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role)
 must list every profile in its `policy_inputs.task.profiles`, or it cannot
 pass the profile's role.
 
@@ -59,7 +59,7 @@ never answers.
   `task/launch` may launch Amazon-owned images only.
 - **Type:** `default_instance_type`, `c8a.xlarge` by default. The launcher
   passes the type per launch; the launch role's allow-list
-  ([`ci-task-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-task-role)) decides which types may be launched.
+  ([`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role)) decides which types may be launched.
 - **Network:** the template sets the security group but no subnet. The
   launcher passes a public subnet per launch, so it can try the next
   availability zone when one has no capacity. There is no ingress and no SSH.
@@ -70,7 +70,7 @@ never answers.
   core count, which tasks wait for. With `gpu = true` it also records
   `gpu_model`, `gpu_memory`, `nvidia_driver` and `cuda_version`. An image
   without the SSM agent gets it installed. The steps are in
-  [`files/task-setup.sh`](https://github.com/jwallace145/terraform-aws-jaws-research/blob/main/modules/task-runner/files/task-setup.sh).
+  [`files/task-setup.sh`](https://github.com/Jaws-Platform/terraform-aws-jaws-research/blob/main/modules/task-runner/files/task-setup.sh).
 - **Disk:** an encrypted gp3 root volume of `root_volume_gb`, deleted with
   the instance.
 
@@ -134,7 +134,7 @@ spend by `Project`, `Component` or `Purpose`.
 
 ```hcl
 module "task_results" {
-  source  = "jwallace145/jaws-foundation/aws//modules/private-bucket"
+  source  = "Jaws-Platform/jaws-foundation/aws//modules/private-bucket"
   version = "~> 0.1"
 
   name                           = "acme-chess-bot-tasks"
@@ -142,7 +142,7 @@ module "task_results" {
 }
 
 module "tasks" {
-  source  = "jwallace145/jaws-research/aws//modules/task-runner"
+  source  = "Jaws-Platform/jaws-research/aws//modules/task-runner"
   version = "0.1.0" # x-release-please-version
 
   name_root      = "acme"
@@ -153,7 +153,7 @@ module "tasks" {
 
 # A second profile: GPU instances with their own image, disk and role.
 module "gpu_tasks" {
-  source  = "jwallace145/jaws-research/aws//modules/task-runner"
+  source  = "Jaws-Platform/jaws-research/aws//modules/task-runner"
   version = "0.1.0" # x-release-please-version
 
   name_root             = "acme"
@@ -170,9 +170,9 @@ module "gpu_tasks" {
 ```
 
 `module.vpc` is a VPC with public subnets, for example the
-[`vpc`](https://registry.terraform.io/modules/jwallace145/jaws-network/aws/latest/submodules/vpc)
+[`vpc`](https://registry.terraform.io/modules/Jaws-Platform/jaws-network/aws/latest/submodules/vpc)
 module, and `data.aws_ami.deep_learning` an image that ships the NVIDIA
-driver and CUDA. The [root module](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest)
+driver and CUDA. The [root module](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest)
 creates a project's profiles, and its datasets, in one call.
 
 <!-- BEGIN_TF_DOCS -->
