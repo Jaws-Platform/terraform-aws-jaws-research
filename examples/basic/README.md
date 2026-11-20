@@ -26,7 +26,7 @@ address, and the git sources with the other families' registry addresses:
 ```hcl
 module "research" {
   source  = "jaws-platform/jaws-research/aws"
-  version = "0.1.0" # x-release-please-version
+  version = "0.1.1" # x-release-please-version
 
   name_root = "acme"
   project   = "chess-bot"
