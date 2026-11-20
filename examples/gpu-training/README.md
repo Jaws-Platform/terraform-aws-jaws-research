@@ -15,12 +15,12 @@ instances:
   never overwrite, versioned so that an administrator's mistake can be undone
   for 90 days;
 - a VPC with public subnets and the results bucket, as in the
-  [`basic`](https://github.com/jwallace145/terraform-aws-jaws-research/tree/main/examples/basic)
+  [`basic`](https://github.com/Jaws-Platform/terraform-aws-jaws-research/tree/main/examples/basic)
   example.
 
 `dataset_reader_role_arns` names further roles that may read the positions,
 for example the role of a Databricks storage credential created by
-[`databricks-dataset`](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest/submodules/databricks-dataset).
+[`databricks-dataset`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-dataset).
 It is empty by default, because a bucket policy cannot name a role that does
 not exist yet.
 
@@ -39,7 +39,7 @@ address:
 
 ```hcl
 module "research" {
-  source  = "jwallace145/jaws-research/aws"
+  source  = "Jaws-Platform/jaws-research/aws"
   version = "0.1.0" # x-release-please-version
 
   name_root = "acme"

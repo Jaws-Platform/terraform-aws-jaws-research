@@ -1,9 +1,9 @@
 # terraform-aws-jaws-research
 
-[![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fmodules%2Fjwallace145%2Fjaws-research%2Faws&query=%24.version&prefix=v&label=registry&logo=terraform&color=7B42BC)](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest)
-[![GitHub release](https://img.shields.io/github/v/release/jwallace145/terraform-aws-jaws-research?label=release)](https://github.com/jwallace145/terraform-aws-jaws-research/releases/latest)
-[![CI](https://github.com/jwallace145/terraform-aws-jaws-research/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/jwallace145/terraform-aws-jaws-research/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/jwallace145/terraform-aws-jaws-research/blob/main/LICENSE)
+[![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fmodules%2FJaws-Platform%2Fjaws-research%2Faws&query=%24.version&prefix=v&label=registry&logo=terraform&color=7B42BC)](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest)
+[![GitHub release](https://img.shields.io/github/v/release/Jaws-Platform/terraform-aws-jaws-research?label=release)](https://github.com/Jaws-Platform/terraform-aws-jaws-research/releases/latest)
+[![CI](https://github.com/Jaws-Platform/terraform-aws-jaws-research/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/Jaws-Platform/terraform-aws-jaws-research/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Jaws-Platform/terraform-aws-jaws-research/blob/main/LICENSE)
 
 What a research project needs in an AWS account to run compute-heavy work
 from CI and keep what it produces: launch templates for **ephemeral EC2 task
@@ -62,9 +62,9 @@ profile and every dataset bucket is opt-in.
 
 | Module | Creates |
 |---|---|
-| [root](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest) | One project in one call: a `task-runner` per profile, sharing one security group and one log group, and a `dataset-bucket` per dataset, with the profiles' instance roles granted access to it. |
-| [`task-runner`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/task-runner) | One task profile: a launch template (a lifetime guard, terminate on shutdown, IMDSv2, an encrypted root volume), a write-only instance role and profile and, for a project's first profile, the no-ingress security group and the log group. It launches nothing. |
-| [`dataset-bucket`](https://registry.terraform.io/modules/jwallace145/jaws-research/aws/latest/submodules/dataset-bucket) | A kept-forever, append-only S3 bucket: no expiry, Intelligent-Tiering, `prevent_destroy`, add-only access for writer roles under one prefix, narrower grants by sub-prefix (optionally write-once), and read access for named roles. |
+| [root](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest) | One project in one call: a `task-runner` per profile, sharing one security group and one log group, and a `dataset-bucket` per dataset, with the profiles' instance roles granted access to it. |
+| [`task-runner`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/task-runner) | One task profile: a launch template (a lifetime guard, terminate on shutdown, IMDSv2, an encrypted root volume), a write-only instance role and profile and, for a project's first profile, the no-ingress security group and the log group. It launches nothing. |
+| [`dataset-bucket`](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest/submodules/dataset-bucket) | A kept-forever, append-only S3 bucket: no expiry, Intelligent-Tiering, `prevent_destroy`, add-only access for writer roles under one prefix, narrower grants by sub-prefix (optionally write-once), and read access for named roles. |
 
 ## Usage
 
@@ -73,7 +73,7 @@ to. The module names that bucket; you create it:
 
 ```hcl
 module "research" {
-  source  = "jwallace145/jaws-research/aws"
+  source  = "Jaws-Platform/jaws-research/aws"
   version = "0.1.0" # x-release-please-version
 
   name_root = "acme"
@@ -82,7 +82,7 @@ module "research" {
 }
 
 module "task_results" {
-  source  = "jwallace145/jaws-foundation/aws//modules/private-bucket"
+  source  = "Jaws-Platform/jaws-foundation/aws//modules/private-bucket"
   version = "~> 0.1"
 
   name                           = module.research.results_bucket_name
@@ -95,7 +95,7 @@ tasks read them and add nets that can never be overwritten:
 
 ```hcl
 module "research" {
-  source  = "jwallace145/jaws-research/aws"
+  source  = "Jaws-Platform/jaws-research/aws"
   version = "0.1.0" # x-release-please-version
 
   name_root = "acme"
@@ -135,7 +135,7 @@ no task writes to, read by a role you already have:
 
 ```hcl
 module "nnue" {
-  source  = "jwallace145/jaws-research/aws//modules/dataset-bucket"
+  source  = "Jaws-Platform/jaws-research/aws//modules/dataset-bucket"
   version = "0.1.0" # x-release-please-version
 
   name             = "acme-chess-bot-nnue"
@@ -165,10 +165,10 @@ outputs of this module:
 
 In Jaws the launcher is the CLI's `jaws task run`, and the role it runs as
 comes from the
-[CI family](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest):
-[`ci-task-role`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-task-role)
+[CI family](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest):
+[`ci-task-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-task-role)
 with the `task/launch` policy of
-[`ci-policies`](https://registry.terraform.io/modules/jwallace145/jaws-ci/aws/latest/submodules/ci-policies).
+[`ci-policies`](https://registry.terraform.io/modules/Jaws-Platform/jaws-ci/aws/latest/submodules/ci-policies).
 That policy can launch only from this project's templates, only an
 allow-list of instance types and only Amazon-owned images, pass only the
 profiles' instance roles, and read only this project's task output. The same
@@ -180,20 +180,20 @@ these resources (`task/*` and `dataset/*`; its README says what each covers).
 `reader_role_arns` names the roles that may read a dataset, through its
 bucket policy: a training role in another project, or the role of a
 Databricks storage credential. The
-[Databricks family](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest)
+[Databricks family](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest)
 creates that role and a read-only Unity Catalog external location over the
 prefix with
-[`databricks-dataset`](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest/submodules/databricks-dataset),
+[`databricks-dataset`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-dataset),
 and decides which workspaces may read it with
-[`databricks-dataset-access`](https://registry.terraform.io/modules/jwallace145/jaws-databricks/aws/latest/submodules/databricks-dataset-access).
+[`databricks-dataset-access`](https://registry.terraform.io/modules/Jaws-Platform/jaws-databricks/aws/latest/submodules/databricks-dataset-access).
 The role can read nothing until the bucket names it here, so the project that
 owns the data holds the switch.
 
 ## Examples
 
-- [`basic`](https://github.com/jwallace145/terraform-aws-jaws-research/tree/main/examples/basic):
+- [`basic`](https://github.com/Jaws-Platform/terraform-aws-jaws-research/tree/main/examples/basic):
   one `cpu` profile with every default, its VPC and its results bucket.
-- [`gpu-training`](https://github.com/jwallace145/terraform-aws-jaws-research/tree/main/examples/gpu-training):
+- [`gpu-training`](https://github.com/Jaws-Platform/terraform-aws-jaws-research/tree/main/examples/gpu-training):
   a `cpu` and a `gpu` profile, a dataset of positions and a write-once
   dataset of nets.
 
@@ -239,7 +239,7 @@ reference.
   provider's `default_tags`, on this stack and on the VPC's.
 - **Spot needs the EC2 Spot service-linked role** in the account before the
   first spot launch, and a launch role should not be able to create it.
-  [`service-linked-role`](https://registry.terraform.io/modules/jwallace145/jaws-foundation/aws/latest/submodules/service-linked-role)
+  [`service-linked-role`](https://registry.terraform.io/modules/Jaws-Platform/jaws-foundation/aws/latest/submodules/service-linked-role)
   creates it, once per account.
 - **A task instance can only write.** Tasks run pull request code, so the
   instance role reads no parameter, no secret, no image and no earlier
@@ -281,7 +281,7 @@ write-once grants are enforced.
 
 ## Development
 
-See [CONTRIBUTING.md](https://github.com/jwallace145/terraform-aws-jaws-research/blob/main/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/Jaws-Platform/terraform-aws-jaws-research/blob/main/CONTRIBUTING.md)
 for local setup, the commit and pull request rules, CI, and how releases work.
 `scripts/check.sh` runs everything CI runs, with no AWS credentials.
 
@@ -341,4 +341,4 @@ No resources.
 
 ## License
 
-[MIT](https://github.com/jwallace145/terraform-aws-jaws-research/blob/main/LICENSE)
+[MIT](https://github.com/Jaws-Platform/terraform-aws-jaws-research/blob/main/LICENSE)
