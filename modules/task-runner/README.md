@@ -143,7 +143,7 @@ module "task_results" {
 
 module "tasks" {
   source  = "Jaws-Platform/jaws-research/aws//modules/task-runner"
-  version = "0.1.1" # x-release-please-version
+  version = "0.1.2" # x-release-please-version
 
   name_root      = "acme"
   project        = "chess-bot"
@@ -154,7 +154,7 @@ module "tasks" {
 # A second profile: GPU instances with their own image, disk and role.
 module "gpu_tasks" {
   source  = "Jaws-Platform/jaws-research/aws//modules/task-runner"
-  version = "0.1.1" # x-release-please-version
+  version = "0.1.2" # x-release-please-version
 
   name_root             = "acme"
   project               = "chess-bot"
