@@ -20,7 +20,7 @@ provider "aws" {
 }
 
 module "vpc" {
-  source = "git::https://github.com/jaws-platform/terraform-aws-jaws-network.git//modules/vpc?ref=v0.1.0"
+  source = "git::https://github.com/Jaws-Platform/terraform-aws-jaws-network.git//modules/vpc?ref=v0.1.0"
 
   name       = "acme-chess-bot"
   cidr_block = "10.40.0.0/16"
@@ -28,7 +28,7 @@ module "vpc" {
 
 # The caller owns the results bucket the task instances write to.
 module "task_results" {
-  source = "git::https://github.com/jaws-platform/terraform-aws-jaws-foundation.git//modules/private-bucket?ref=v0.1.0"
+  source = "git::https://github.com/Jaws-Platform/terraform-aws-jaws-foundation.git//modules/private-bucket?ref=v0.1.0"
 
   name                           = "acme-chess-bot-tasks"
   current_object_expiration_days = 7
