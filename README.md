@@ -1,3 +1,5 @@
+[![Jaws: one platform for every project on AWS](https://raw.githubusercontent.com/Jaws-Platform/jaws-branding/main/assets/banner/jaws-readme-banner.png)](https://github.com/Jaws-Platform)
+
 # terraform-aws-jaws-research
 
 [![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fmodules%2FJaws-Platform%2Fjaws-research%2Faws&query=%24.version&prefix=v&label=registry&logo=terraform&color=7B42BC)](https://registry.terraform.io/modules/Jaws-Platform/jaws-research/aws/latest)
@@ -12,7 +14,7 @@ instances** (CPU instances for benchmarks, GPU instances for training) and
 and read. Nothing here launches an instance, and nothing here costs money
 until tasks run and data lands.
 
-It is one of the [Jaws](https://github.com/jwallace145/jaws) module families.
+It is one of the [Jaws](https://github.com/Jaws-Platform/jaws) module families.
 In Jaws, a CLI run from a GitHub Actions workflow starts one instance per
 task, runs the task on it through SSM Run Command and terminates it. The
 modules have no dependency on Jaws: everything is a plain input, and any

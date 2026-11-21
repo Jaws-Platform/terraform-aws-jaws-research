@@ -7,7 +7,7 @@ instance role and profile, an egress-only security group and a CloudWatch
 log group. It launches nothing. A launcher does that from CI: it starts one
 instance per task from the template, runs the task through SSM Run Command,
 streams its output, copies its results and terminates the instance. The
-module was built for the [Jaws](https://github.com/jwallace145/jaws) CLI
+module was built for the [Jaws](https://github.com/Jaws-Platform/jaws) CLI
 (`jaws task run`), which is the launcher this page has in mind; anything
 that keeps to the same contract works.
 
